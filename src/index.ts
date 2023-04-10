@@ -1,15 +1,33 @@
-import express, { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
+import databaseService from './services/database.service';
+import shortenerBusiness from './business/shortener.business';
+
+const PORT = 13333;
+databaseService.init();
 
 const app = express();
-
-const route = Router();
-
 app.use(express.json());
 
-route.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'hello world with Typescript' });
+app.post('/', async (req: Request, res: Response) => {
+  const { url } = req.body;
+
+  const encodedId = await shortenerBusiness.encodeUrl(url);
+
+  res.send({ url, encodedId });
 });
 
-app.use(route);
+app.get('/:encodedId', async (req: Request, res: Response) => {
+  const { encodedId } = req.params;
 
-app.listen(3333, () => console.info('server running on port 3333'));
+  const url = await shortenerBusiness.decodeUrl(encodedId);
+
+  if (url) {
+    res.redirect(url);
+  } else {
+    res.sendStatus(404);
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`);
+});
